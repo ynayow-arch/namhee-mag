@@ -8,6 +8,8 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
+import resvg_py
+
 
 TOPIC_QUERIES = (
     ("김장", "kimchi preparation napa cabbage"),
@@ -246,7 +248,12 @@ def ensure_article_image(article_path):
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, RuntimeError) as error:
         print(f"Warning: Commons image unavailable ({error}); creating an original local illustration.")
         image_info = _local_illustration(title)
-        image_data = image_info.pop("svg").encode("utf-8")
+        image_data = resvg_py.svg_to_bytes(
+            svg_string=image_info.pop("svg"),
+            width=1200,
+        )
+        image_info["mime"] = "image/png"
+        image_info["license"] = "Original local PNG illustration"
 
     extension = mimetypes.guess_extension(image_info["mime"]) or ".jpg"
     if extension == ".jpe":
