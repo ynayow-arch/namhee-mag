@@ -448,31 +448,34 @@ def main():
     )
     args = parser.parse_args()
     interactive = not args.articles
-    if interactive:
-        selected_article = _select_article()
-        if selected_article is None:
-            print("변환을 종료합니다.")
-            return
-        articles = [selected_article]
-    else:
-        articles = [_article_path(value) for value in args.articles]
-
-    prepared = [_prepare_article(article_path) for article_path in articles]
-    _publish_pngs([(png_path, url) for _, _, png_path, url in prepared])
-
-    sections = []
-    for article_path, (image_alt, source_image, _, url) in zip(articles, prepared):
-        content = _render_markdown(article_path, url, image_alt, source_image)
-        sections.append(content)
-    result = "\n\n".join(sections)
-    if not args.no_clipboard:
-        _copy_html_to_clipboard(result)
+    while True:
         if interactive:
-            print("선택한 글의 아임웹용 HTML을 클립보드에 복사했습니다.")
+            selected_article = _select_article()
+            if selected_article is None:
+                print("변환을 종료합니다.")
+                return
+            articles = [selected_article]
         else:
-            print("Imweb-ready HTML copied to the clipboard.", file=sys.stderr)
-    if not interactive or args.no_clipboard:
-        print(result)
+            articles = [_article_path(value) for value in args.articles]
+
+        prepared = [_prepare_article(article_path) for article_path in articles]
+        _publish_pngs([(png_path, url) for _, _, png_path, url in prepared])
+
+        sections = []
+        for article_path, (image_alt, source_image, _, url) in zip(articles, prepared):
+            content = _render_markdown(article_path, url, image_alt, source_image)
+            sections.append(content)
+        result = "\n\n".join(sections)
+        if not args.no_clipboard:
+            _copy_html_to_clipboard(result)
+            if interactive:
+                print("선택한 글의 아임웹용 HTML을 클립보드에 복사했습니다.")
+            else:
+                print("Imweb-ready HTML copied to the clipboard.", file=sys.stderr)
+        if not interactive or args.no_clipboard:
+            print(result)
+        if not interactive:
+            return
 
 
 if __name__ == "__main__":

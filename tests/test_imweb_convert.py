@@ -85,7 +85,7 @@ class ImwebConvertTests(unittest.TestCase):
                 patch.object(
                     imweb_convert, "_copy_html_to_clipboard", side_effect=clipboard.append
                 ),
-                patch("builtins.input", return_value=""),
+                patch("builtins.input", side_effect=["", "q"]),
                 redirect_stdout(output),
             ):
                 imweb_convert.main()
@@ -98,6 +98,63 @@ class ImwebConvertTests(unittest.TestCase):
             self.assertIn('<img src="' + public_url + '" alt="Cover">', clipboard[0])
             self.assertNotIn("<!--", clipboard[0])
             self.assertIn("클립보드에 복사했습니다.", output.getvalue())
+
+    def test_interactive_menu_repeats_until_quit_after_copying_articles(self):
+        with tempfile.TemporaryDirectory() as directory:
+            entries = []
+            prepared = {}
+            for number in range(1, 4):
+                article_path = Path(directory) / f"article-{number}.md"
+                article_path.write_text(
+                    "# Article\n\n![Cover](assets/images/cover.svg)\n\n"
+                    f"Article {number}.\n",
+                    encoding="utf-8",
+                )
+                entries.append(
+                    (
+                        {
+                            "file": article_path.name,
+                            "date": "2026.11.20",
+                            "category": "오늘의 패션",
+                            "title": f"Article {number}",
+                        },
+                        article_path,
+                    )
+                )
+                prepared[article_path] = (
+                    "Cover",
+                    "assets/images/cover.svg",
+                    Path(directory) / f"cover-{number}.png",
+                    f"https://raw.githubusercontent.com/example/repo/main/"
+                    f"assets/images/cover-{number}.png",
+                )
+
+            clipboard = []
+            output = StringIO()
+            with (
+                patch("sys.argv", ["imweb_convert.py"]),
+                patch.object(imweb_convert, "_latest_articles", return_value=entries),
+                patch.object(
+                    imweb_convert, "_prepare_article", side_effect=prepared.__getitem__
+                ) as prepare_article,
+                patch.object(imweb_convert, "_publish_pngs"),
+                patch.object(
+                    imweb_convert, "_copy_html_to_clipboard", side_effect=clipboard.append
+                ),
+                patch("builtins.input", side_effect=["1", "2", "3", "q"]),
+                redirect_stdout(output),
+            ):
+                imweb_convert.main()
+
+            self.assertEqual(
+                prepare_article.call_args_list,
+                [call(entry[1]) for entry in entries],
+            )
+            self.assertEqual(len(clipboard), 3)
+            for number, copied_html in enumerate(clipboard, start=1):
+                self.assertIn(f"cover-{number}.png", copied_html)
+                self.assertNotIn("<!--", copied_html)
+            self.assertEqual(output.getvalue().count("최신 글 목록"), 4)
 
     def test_interactive_menu_quits_without_converting(self):
         entries = [
