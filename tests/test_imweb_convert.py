@@ -1,5 +1,7 @@
 import tempfile
 import unittest
+from contextlib import redirect_stdout
+from io import StringIO
 from pathlib import Path
 from unittest.mock import call, patch
 
@@ -44,6 +46,98 @@ class ImwebConvertTests(unittest.TestCase):
         png_path = imweb_convert._png_destination(article)
 
         self.assertRegex(png_path.name, r"^imweb-[a-z0-9-]+\.png$")
+
+    def test_interactive_menu_defaults_to_first_article_and_copies_public_png_html(self):
+        with tempfile.TemporaryDirectory() as directory:
+            article_path = Path(directory) / "article.md"
+            article_path.write_text(
+                "# Article\n\n![Cover](assets/images/cover.svg)\n\nArticle text.\n",
+                encoding="utf-8",
+            )
+            entries = [
+                (
+                    {
+                        "file": f"article-{number}.md",
+                        "date": "2026.11.20",
+                        "category": "오늘의 패션",
+                        "title": f"Article {number}",
+                    },
+                    article_path,
+                )
+                for number in range(1, 4)
+            ]
+            png_path = Path(directory) / "cover.png"
+            public_url = (
+                "https://raw.githubusercontent.com/example/repo/main/"
+                "assets/images/cover.png"
+            )
+            clipboard = []
+            output = StringIO()
+            with (
+                patch("sys.argv", ["imweb_convert.py"]),
+                patch.object(imweb_convert, "_latest_articles", return_value=entries),
+                patch.object(
+                    imweb_convert,
+                    "_prepare_article",
+                    return_value=("Cover", "assets/images/cover.svg", png_path, public_url),
+                ) as prepare_article,
+                patch.object(imweb_convert, "_publish_pngs"),
+                patch.object(
+                    imweb_convert, "_copy_html_to_clipboard", side_effect=clipboard.append
+                ),
+                patch("builtins.input", return_value=""),
+                redirect_stdout(output),
+            ):
+                imweb_convert.main()
+
+            prepare_article.assert_called_once_with(article_path)
+            self.assertIn("1. [2026.11.20] [오늘의 패션] Article 1", output.getvalue())
+            self.assertIn("2. [2026.11.20] [오늘의 패션] Article 2", output.getvalue())
+            self.assertIn("3. [2026.11.20] [오늘의 패션] Article 3", output.getvalue())
+            self.assertIn(public_url, clipboard[0])
+            self.assertIn('<img src="' + public_url + '" alt="Cover">', clipboard[0])
+            self.assertNotIn("<!--", clipboard[0])
+            self.assertIn("클립보드에 복사했습니다.", output.getvalue())
+
+    def test_interactive_menu_quits_without_converting(self):
+        entries = [
+            (
+                {"file": f"article-{number}.md", "title": f"Article {number}"},
+                Path(f"article-{number}.md"),
+            )
+            for number in range(1, 4)
+        ]
+        output = StringIO()
+        with (
+            patch("sys.argv", ["imweb_convert.py"]),
+            patch.object(imweb_convert, "_latest_articles", return_value=entries),
+            patch.object(imweb_convert, "_prepare_article") as prepare_article,
+            patch("builtins.input", return_value="q"),
+            redirect_stdout(output),
+        ):
+            imweb_convert.main()
+
+        prepare_article.assert_not_called()
+        self.assertIn("변환을 종료합니다.", output.getvalue())
+
+    def test_interactive_menu_accepts_article_number_after_invalid_input(self):
+        entries = [
+            (
+                {"file": f"article-{number}.md", "title": f"Article {number}"},
+                Path(f"article-{number}.md"),
+            )
+            for number in range(1, 4)
+        ]
+        output = StringIO()
+        with (
+            patch.object(imweb_convert, "_latest_articles", return_value=entries),
+            patch("builtins.input", side_effect=["4", "2"]),
+            redirect_stdout(output),
+        ):
+            selected = imweb_convert._select_article()
+
+        self.assertEqual(selected, entries[1][1])
+        self.assertIn("1부터 3 사이의 번호", output.getvalue())
 
     def test_html_uses_public_png_and_keeps_table_rows_together(self):
         with tempfile.TemporaryDirectory() as directory:

@@ -53,11 +53,35 @@ def _article_path(value):
     return candidate
 
 
-def _latest_article():
+def _latest_articles(limit=3):
     posts = json.loads((ROOT / "posts.json").read_text(encoding="utf-8-sig"))
     if not posts:
         raise ConversionError("posts.json does not contain any articles.")
-    return _article_path(posts[0]["file"])
+    return [(post, _article_path(post["file"])) for post in posts[:limit]]
+
+
+def _latest_article():
+    return _latest_articles(1)[0][1]
+
+
+def _select_article():
+    entries = _latest_articles()
+    print("최신 글 목록")
+    for number, (post, _) in enumerate(entries, start=1):
+        date = post.get("date", "")
+        category = post.get("category", "")
+        title = post.get("title", post["file"])
+        print(f"{number}. [{date}] [{category}] {title}")
+
+    while True:
+        choice = input("번호 선택 (엔터=1번, q=종료): ").strip()
+        if choice.lower() == "q":
+            return None
+        if not choice:
+            return entries[0][1]
+        if choice.isdecimal() and 1 <= int(choice) <= len(entries):
+            return entries[int(choice) - 1][1]
+        print(f"1부터 {len(entries)} 사이의 번호를 입력하거나 q를 입력해 주세요.")
 
 
 def _read_markdown_image(article_path):
@@ -392,7 +416,10 @@ def convert_article(article_path):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Convert article images to public PNG URLs and render Imweb-ready HTML."
+        description=(
+            "Choose a recent article interactively, or convert the specified article "
+            "to Imweb-ready HTML with a public PNG image URL."
+        )
     )
     parser.add_argument(
         "articles",
@@ -405,20 +432,32 @@ def main():
         help="Print HTML without copying it to the clipboard.",
     )
     args = parser.parse_args()
-    articles = [_article_path(value) for value in args.articles] or [_latest_article()]
+    interactive = not args.articles
+    if interactive:
+        selected_article = _select_article()
+        if selected_article is None:
+            print("변환을 종료합니다.")
+            return
+        articles = [selected_article]
+    else:
+        articles = [_article_path(value) for value in args.articles]
 
     prepared = [_prepare_article(article_path) for article_path in articles]
     _publish_pngs([(png_path, url) for _, _, png_path, url in prepared])
 
     sections = []
-    for article_path, (image_alt, source_image, png_path, url) in zip(articles, prepared):
+    for article_path, (image_alt, source_image, _, url) in zip(articles, prepared):
         content = _render_markdown(article_path, url, image_alt, source_image)
-        sections.append(f"<!-- Image: {png_path.name} | {url} -->\n{content}")
+        sections.append(content)
     result = "\n\n".join(sections)
     if not args.no_clipboard:
         _copy_html_to_clipboard(result)
-        print("Imweb-ready HTML copied to the clipboard.", file=sys.stderr)
-    print(result)
+        if interactive:
+            print("선택한 글의 아임웹용 HTML을 클립보드에 복사했습니다.")
+        else:
+            print("Imweb-ready HTML copied to the clipboard.", file=sys.stderr)
+    if not interactive or args.no_clipboard:
+        print(result)
 
 
 if __name__ == "__main__":
