@@ -22,6 +22,7 @@ ROOT = Path(__file__).resolve().parent
 IMAGE_PATTERN = re.compile(r"!\[([^\]]*)\]\(([^)\s]+)\)")
 RAW_PNG_SIGNATURE = b"\x89PNG\r\n\x1a\n"
 PUBLISH_RETRIES = 30
+GENERATED_IMAGE_CAPTION = "> 이미지: 글 주제에 맞춰 매거진에서 직접 만든 그림입니다."
 
 
 class ConversionError(RuntimeError):
@@ -346,6 +347,10 @@ def _render_markdown(article_path, image_url, image_alt, source_image):
             index += 1
             continue
 
+        if line == GENERATED_IMAGE_CAPTION:
+            index += 1
+            continue
+
         heading = re.match(r"^(#{2,3})\s+(.+)$", line)
         if heading:
             close_list()
@@ -415,6 +420,10 @@ def _render_markdown(article_path, image_url, image_alt, source_image):
     return "\n".join(output)
 
 
+def _wrap_imweb_content(content):
+    return f'<div style="max-width: 720px; margin: 0 auto;">\n{content}\n</div>'
+
+
 def _prepare_article(article_path):
     image_alt, source_image, source_path = _read_markdown_image(article_path)
     png_path = _convert_to_png(source_path, _png_destination(article_path))
@@ -425,7 +434,9 @@ def _prepare_article(article_path):
 def convert_article(article_path):
     image_alt, source_image, png_path, url = _prepare_article(article_path)
     _publish_pngs([(png_path, url)])
-    content = _render_markdown(article_path, url, image_alt, source_image)
+    content = _wrap_imweb_content(
+        _render_markdown(article_path, url, image_alt, source_image)
+    )
     return content, url, png_path
 
 
@@ -465,7 +476,7 @@ def main():
         for article_path, (image_alt, source_image, _, url) in zip(articles, prepared):
             content = _render_markdown(article_path, url, image_alt, source_image)
             sections.append(content)
-        result = "\n\n".join(sections)
+        result = _wrap_imweb_content("\n\n".join(sections))
         if not args.no_clipboard:
             _copy_html_to_clipboard(result)
             if interactive:

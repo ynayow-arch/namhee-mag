@@ -96,6 +96,12 @@ class ImwebConvertTests(unittest.TestCase):
             self.assertIn("3. [2026.11.20] [오늘의 패션] Article 3", output.getvalue())
             self.assertIn(public_url, clipboard[0])
             self.assertIn('<img src="' + public_url + '" alt="Cover">', clipboard[0])
+            self.assertTrue(
+                clipboard[0].startswith(
+                    '<div style="max-width: 720px; margin: 0 auto;">'
+                )
+            )
+            self.assertTrue(clipboard[0].endswith("</div>"))
             self.assertNotIn("<!--", clipboard[0])
             self.assertIn("클립보드에 복사했습니다.", output.getvalue())
 
@@ -201,6 +207,8 @@ class ImwebConvertTests(unittest.TestCase):
             article_path = Path(directory) / "article.md"
             article_path.write_text(
                 "# Article\n\n![Cover](assets/images/cover.svg)\n\n"
+                "> 이미지: 글 주제에 맞춰 매거진에서 직접 만든 그림입니다.\n"
+                "> 이미지 출처: 테스트 출처\n\n"
                 "## Section\n\n### Subsection\n\n"
                 "| Item | Detail |\n|---|---|\n| One | Two |\n",
                 encoding="utf-8",
@@ -238,9 +246,44 @@ class ImwebConvertTests(unittest.TestCase):
                 'text-align: left;">One</td>',
                 rendered,
             )
+            self.assertNotIn(
+                "이미지: 글 주제에 맞춰 매거진에서 직접 만든 그림입니다.", rendered
+            )
+            self.assertIn("<blockquote>이미지 출처: 테스트 출처</blockquote>", rendered)
             self.assertNotIn("data:image", rendered)
             self.assertEqual(rendered.count("<table "), 1)
             self.assertEqual(rendered.count("<tr>"), 2)
+
+    def test_convert_article_wraps_body_and_omits_generated_image_caption(self):
+        with tempfile.TemporaryDirectory() as directory:
+            article_path = Path(directory) / "article.md"
+            article_path.write_text(
+                "# Article\n\n![Cover](assets/images/cover.svg)\n"
+                "> 이미지: 글 주제에 맞춰 매거진에서 직접 만든 그림입니다.\n",
+                encoding="utf-8",
+            )
+            image_path = Path(directory) / "cover.png"
+            public_url = (
+                "https://raw.githubusercontent.com/example/repo/main/"
+                "assets/images/cover.png"
+            )
+            with (
+                patch.object(
+                    imweb_convert,
+                    "_prepare_article",
+                    return_value=("Cover", "assets/images/cover.svg", image_path, public_url),
+                ),
+                patch.object(imweb_convert, "_publish_pngs"),
+            ):
+                content, url, png_path = imweb_convert.convert_article(article_path)
+
+            self.assertEqual(url, public_url)
+            self.assertEqual(png_path, image_path)
+            self.assertTrue(
+                content.startswith('<div style="max-width: 720px; margin: 0 auto;">')
+            )
+            self.assertTrue(content.endswith("</div>"))
+            self.assertNotIn("글 주제에 맞춰 매거진에서 직접 만든 그림입니다.", content)
 
     def test_cf_html_offsets_point_to_utf8_fragment(self):
         fragment = "<p>안녕하세요</p>"
