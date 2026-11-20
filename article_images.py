@@ -12,6 +12,11 @@ import resvg_py
 
 
 TOPIC_QUERIES = (
+    ("기모 바지", "women fleece lined trousers winter outfit"),
+    ("손보습", "hands hand cream skincare"),
+    ("손이 거칠", "hands hand cream winter skin"),
+    ("프리 사이즈", "women knit sweater fashion shopping"),
+    ("니트", "women knit sweater fashion"),
     ("김장", "kimchi preparation napa cabbage"),
     ("배추", "napa cabbage"),
     ("독감", "influenza vaccine"),
@@ -124,6 +129,12 @@ def _find_commons_image(title):
 def _local_illustration(title):
     if "양말" in title or "신발" in title:
         artwork = '<path d="M430 170h85v170l65 60q15 18-8 30H420q-20-10-10-32l20-48z" fill="#d77d6b"/><path d="M610 180h82v160l68 58q16 18-8 32H600q-19-10-9-33l19-47z" fill="#e2b34e"/><path d="M385 430q70-35 200 0l-20 54H365z" fill="#647c78"/><path d="M585 430q70-35 200 0l-20 54H565z" fill="#647c78"/>'
+    elif "기모 바지" in title or "바지" in title:
+        artwork = '<path d="M470 185h260l-25 210-35 180H555l-15-170-15 170H430l-35-180z" fill="#687c73"/><path d="M470 205h260M455 395h280" stroke="#d9b469" stroke-width="18" stroke-linecap="round"/><path d="M555 555h115m-240 20h115" stroke="#d77d6b" stroke-width="22" stroke-linecap="round"/>'
+    elif "손" in title or "피부" in title or "보습" in title:
+        artwork = '<path d="M515 500q-48-15-63-72l-28-113q-10-40 22-48 30-7 43 29l22 70-28-180q-6-42 28-46 34-4 40 38l22 150-3-186q0-42 34-42 35 0 34 43l-3 190 24-142q7-41 39-35 32 6 24 48l-27 188q-14 102-110 112z" fill="#d89c78"/><path d="M420 285q-50-10-50-55 48-15 70 27" fill="#d77d6b"/><rect x="730" y="340" width="110" height="145" rx="22" fill="#819777"/><rect x="755" y="305" width="60" height="42" rx="10" fill="#d9b469"/>'
+    elif "니트" in title or "프리 사이즈" in title:
+        artwork = '<path d="M500 220l-115 70-55 140 105 40 45-85v165h240V385l45 85 105-40-55-140-115-70-65 55z" fill="#687c73"/><path d="M560 230q40 60 80 0" fill="none" stroke="#d9b469" stroke-width="20"/><path d="M490 380h220" stroke="#d77d6b" stroke-width="14" stroke-dasharray="14 22"/>'
     elif "AI" in title:
         artwork = '<rect x="390" y="215" width="420" height="270" rx="24" fill="#647c78"/><rect x="420" y="245" width="360" height="200" rx="12" fill="#f3e7d4"/><path d="M520 510h160l35 34H485z" fill="#d77d6b"/><circle cx="600" cy="345" r="52" fill="#d9b469"/><path d="M600 275v-30m0 200v-30m70-70h30m-200 0h30" stroke="#647c78" stroke-width="16" stroke-linecap="round"/>'
     elif "용돈" in title or "증여세" in title:
