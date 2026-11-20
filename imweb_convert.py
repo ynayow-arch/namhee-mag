@@ -350,7 +350,11 @@ def _render_markdown(article_path, image_url, image_alt, source_image):
         if heading:
             close_list()
             level = len(heading.group(1))
-            output.append(f"<h{level}>{_inline(heading.group(2))}</h{level}>")
+            output.append(
+                f'<h{level} style="font-size: 20px; font-weight: 700; '
+                f'margin: 32px 0 12px; line-height: 1.4;">'
+                f"{_inline(heading.group(2))}</h{level}>"
+            )
             index += 1
             continue
 
@@ -365,11 +369,22 @@ def _render_markdown(article_path, image_url, image_alt, source_image):
             if rows:
                 header, *body = rows
                 output.append(
-                    "<table><thead><tr>"
-                    + "".join(f"<th>{_inline(cell)}</th>" for cell in header)
+                    '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">'
+                    "<thead><tr>"
+                    + "".join(
+                        '<th style="padding: 10px 12px; border-bottom: 2px solid #ccc; '
+                        f'text-align: left;">{_inline(cell)}</th>'
+                        for cell in header
+                    )
                     + "</tr></thead><tbody>"
                     + "".join(
-                        "<tr>" + "".join(f"<td>{_inline(cell)}</td>" for cell in row) + "</tr>"
+                        "<tr>"
+                        + "".join(
+                            '<td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; '
+                            f'text-align: left;">{_inline(cell)}</td>'
+                            for cell in row
+                        )
+                        + "</tr>"
                         for row in body
                     )
                     + "</tbody></table>"

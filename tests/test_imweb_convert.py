@@ -144,6 +144,7 @@ class ImwebConvertTests(unittest.TestCase):
             article_path = Path(directory) / "article.md"
             article_path.write_text(
                 "# Article\n\n![Cover](assets/images/cover.svg)\n\n"
+                "## Section\n\n### Subsection\n\n"
                 "| Item | Detail |\n|---|---|\n| One | Two |\n",
                 encoding="utf-8",
             )
@@ -155,13 +156,33 @@ class ImwebConvertTests(unittest.TestCase):
                 "assets/images/cover.svg",
             )
 
+            heading_style = (
+                'style="font-size: 20px; font-weight: 700; margin: 32px 0 12px; '
+                'line-height: 1.4;"'
+            )
             self.assertIn(
                 '<img src="https://raw.githubusercontent.com/example/repo/main/'
                 'assets/images/cover.png" alt="Cover">',
                 rendered,
             )
+            self.assertIn(f"<h2 {heading_style}>Section</h2>", rendered)
+            self.assertIn(f"<h3 {heading_style}>Subsection</h3>", rendered)
+            self.assertIn(
+                '<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">',
+                rendered,
+            )
+            self.assertIn(
+                '<th style="padding: 10px 12px; border-bottom: 2px solid #ccc; '
+                'text-align: left;">Item</th>',
+                rendered,
+            )
+            self.assertIn(
+                '<td style="padding: 10px 12px; border-bottom: 1px solid #e5e5e5; '
+                'text-align: left;">One</td>',
+                rendered,
+            )
             self.assertNotIn("data:image", rendered)
-            self.assertEqual(rendered.count("<table>"), 1)
+            self.assertEqual(rendered.count("<table "), 1)
             self.assertEqual(rendered.count("<tr>"), 2)
 
     def test_cf_html_offsets_point_to_utf8_fragment(self):
