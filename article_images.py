@@ -12,6 +12,9 @@ import resvg_py
 
 
 TOPIC_QUERIES = (
+    ("패딩 조끼", "woman quilted vest winter outfit"),
+    ("실내 온도", "home room thermometer winter heating"),
+    ("장갑", "lost glove"),
     ("기모 바지", "women fleece lined trousers winter outfit"),
     ("손보습", "hands hand cream skincare"),
     ("손이 거칠", "hands hand cream winter skin"),
@@ -127,7 +130,13 @@ def _find_commons_image(title):
 
 
 def _local_illustration(title):
-    if "양말" in title or "신발" in title:
+    if "패딩 조끼" in title:
+        artwork = '<path d="M520 200l-70 40-25 270h120l35-40 35 40h120l-25-270-70-40-60 90z" fill="#687c73"/><path d="M445 300h105m100 0h105M440 370h110m100 0h110M435 440h115m100 0h115" stroke="#d9b469" stroke-width="12" stroke-linecap="round"/><path d="M600 290v180" stroke="#d77d6b" stroke-width="14" stroke-linecap="round"/>'
+    elif "실내 온도" in title:
+        artwork = '<rect x="560" y="170" width="80" height="280" rx="40" fill="#f3e7d4"/><circle cx="600" cy="470" r="62" fill="#d77d6b"/><rect x="585" y="260" width="30" height="210" rx="15" fill="#d77d6b"/><path d="M660 230h40M660 290h40M660 350h40" stroke="#647c78" stroke-width="12" stroke-linecap="round"/><path d="M420 470q-40-60 0-120 40 60 0 120zM790 470q-40-60 0-120 40 60 0 120z" fill="#e2b34e"/>'
+    elif "장갑" in title:
+        artwork = '<path d="M430 480V300q0-40 30-40t30 40v-60q0-35 30-35t30 35v40l25-30q25-20 45 5l-50 90v135z" fill="#d77d6b"/><path d="M430 450h140" stroke="#f7f0e5" stroke-width="16"/><path d="M640 480V300q0-40 30-40t30 40v-60q0-35 30-35t30 35v40l25-30q25-20 45 5l-50 90v135z" fill="#687c73" opacity="0.35" stroke-dasharray="18 14"/><text x="690" y="380" fill="#433f39" font-size="90" font-weight="700" font-family="Malgun Gothic,sans-serif">?</text>'
+    elif "양말" in title or "신발" in title:
         artwork = '<path d="M430 170h85v170l65 60q15 18-8 30H420q-20-10-10-32l20-48z" fill="#d77d6b"/><path d="M610 180h82v160l68 58q16 18-8 32H600q-19-10-9-33l19-47z" fill="#e2b34e"/><path d="M385 430q70-35 200 0l-20 54H365z" fill="#647c78"/><path d="M585 430q70-35 200 0l-20 54H565z" fill="#647c78"/>'
     elif "기모 바지" in title or "바지" in title:
         artwork = '<path d="M470 185h260l-25 210-35 180H555l-15-170-15 170H430l-35-180z" fill="#687c73"/><path d="M470 205h260M455 395h280" stroke="#d9b469" stroke-width="18" stroke-linecap="round"/><path d="M555 555h115m-240 20h115" stroke="#d77d6b" stroke-width="22" stroke-linecap="round"/>'
